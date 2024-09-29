@@ -1,0 +1,17 @@
+#!/bin/sh
+#
+# from
+# gcc -E -v -xc++ /dev/null
+# include <...> search starts
+# ...
+# end of search list.
+exec "/usr/bin/ccls" --init='{"clang":{"extraArgs":[
+"-std=c++17",
+"-isystem/usr/lib/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../include/c++/14.2.1",
+"-isystem/usr/lib/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../include/c++/14.2.1/x86_64-pc-linux-gnu",
+"-isystem/usr/lib/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../include/c++/14.2.1/backward",
+"-isystem/usr/lib/gcc/x86_64-pc-linux-gnu/14.2.1/include",
+"-isystem/usr/local/include",
+"-isystem/usr/lib/gcc/x86_64-pc-linux-gnu/14.2.1/include-fixed",
+"-isystem/usr/include"
+]}}' "$@"
