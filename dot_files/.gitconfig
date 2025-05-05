@@ -1,0 +1,47 @@
+[user]
+  name = ash4rk
+  email = cool.shark.98@mail.ru
+[alias]
+  a = add
+  st = status -s
+  s = status -s
+  ci = commit
+  br = branch
+  b = branch
+  co = checkout
+  cl = clone
+  br = branch
+  df = diff
+  diff = diff --word-diff
+  dc = diff --cached
+  cp = cherry-pick
+  me = merge --no-ff
+  stash = stash --keep-index -u
+  drop = !git checkout . && git clean -df
+
+  lg = log -p
+  lgc = log --graph --abbrev-commit --decorate --format=format:'%C(bold blue)%h%C(reset) - %C(bold green)(%ar)%C(reset) %C(white)%s%C(reset) %C(dim white)- %an%C(reset)%C(bold yellow)%d%C(reset)'
+  lg1 = log --graph --abbrev-commit --decorate --format=format:'%C(bold blue)%h%C(reset) - %C(bold green)(%ar)%C(reset) %C(white)%s%C(reset) %C(dim white)- %an%C(reset)%C(bold yellow)%d%C(reset)' --all --exclude=notes
+  lg2 = log --graph --abbrev-commit --decorate --format=format:'%C(bold blue)%h%C(reset) - %C(bold cyan)%aD%C(reset) %C(bold green)(%ar)%C(reset)%C(bold yellow)%d%C(reset)%n''          %C(white)%s%C(reset) %C(dim white)- %an%C(reset)' --all
+  ll = !"git lg1"
+  branch-cleanup = "!git branch --merged | egrep -v \"(^\\*|master|dev)\" | xargs git branch -d #"
+
+  # rebases branch with its sub-branches (one level down)
+  # useage: git move <upstream> <branch>
+  move = "!mv() { git rebase $1 $2; git branch --format='%(refname:short)' --contains $2@{1} | xargs -n 1 git rebase --onto $2 $2@{1}; }; mv"
+  adog = log --all --decorate --oneline --graph
+  lst = log -1 HEAD
+
+[merge]
+  conflictStyle = diff3
+[color]
+  ui = auto
+[init]
+  defaultBranch = main
+[core]
+  editor = vim
+[filter "lfs"]
+  clean = git-lfs clean -- %f
+  smudge = git-lfs smudge -- %f
+  process = git-lfs filter-process
+  required = true
