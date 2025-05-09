@@ -20,10 +20,10 @@
 ;;
 ;; See 'C-h v doom-font' for documentation and more examples of what they
 ;; accept. For example:
-;;
-;;(setq doom-font (font-spec :family "Fira Code" :size 12 :weight 'semi-light)
-;;      doom-variable-pitch-font (font-spec :family "Fira Sans" :size 13))
-;;
+
+(setq doom-font (font-spec :family "Comic Shanns Mono Nerd Font" :size 28 :weight 'regular)
+      doom-variable-pitch-font (font-spec :family "Comic Shanns Mono Nerd Font" :size 13))
+
 ;; If you or Emacs can't find your font, use 'M-x describe-font' to look them
 ;; up, `M-x eval-region' to execute elisp code, and 'M-x doom/reload-font' to
 ;; refresh your font settings. If Emacs still can't find your font, it likely
@@ -33,6 +33,7 @@
 ;; available. You can either set `doom-theme' or manually load a theme with the
 ;; `load-theme' function. This is the default:
 (setq doom-theme 'doom-one)
+(customize-set-variable 'doom-themes-treemacs-theme "doom-colors")
 
 ;; This determines the style of line numbers in effect. If set to `nil', line
 ;; numbers are disabled. For relative line numbers, set this to `relative'.
@@ -74,3 +75,93 @@
 ;;
 ;; You can also try 'gd' (or 'C-c c d') to jump to their definition and see how
 ;; they are implemented.
+
+;; dired
+(evil-define-key 'normal dired-mode-map
+  (kbd "h") 'dired-up-directory
+  (kbd "l") 'dired-open-file
+  (kbd "left") 'dired-up-directory
+  (kbd "right") 'dired-open-file)
+
+;; treemacs
+(defun +private/treemacs-back-and-forth ()
+  (interactive)
+  (if (treemacs-is-treemacs-window-selected?)
+      (aw-flip-window)
+    (treemacs-select-window)))
+
+(map! :after treemacs
+      :leader
+      :n "-" #'+private/treemacs-back-and-forth)
+
+(setq org-support-shift-select 't)
+
+;; to debug CPP code with DAP-MODE
+(setq dap-auto-configure-mode t)
+(require 'dap-cpptools)
+;; Debugging Keybindings
+(map! :leader
+      "dd" nil)
+(map! :leader
+      :prefix ("d" . "dap")
+      ;; basics
+      :desc "dap next"          "n" #'dap-next
+      :desc "dap step in"       "i" #'dap-step-in
+      :desc "dap step out"      "o" #'dap-step-out
+      :desc "dap continue"      "c" #'dap-continue
+      :desc "dap hydra"         "h" #'dap-hydra
+      :desc "dap debug restart" "r" #'dap-debug-restart
+      :desc "dap debug"         "s" #'dap-debug
+
+      ;; debug
+      (:prefix ("dd" . "Debug")
+       :desc "dap debug recent"  "r" #'dap-debug-recent
+       :desc "dap debug last"    "l" #'dap-debug-last
+
+       ;; eval
+       :desc "remove expression"   "d" #'dap-ui-expressions-remove)
+      (:prefix ("de" . "Eval")
+       :desc "eval"                "e" #'dap-eval
+       :desc "eval region"         "r" #'dap-eval-region
+       :desc "eval thing at point" "s" #'dap-eval-thing-at-point
+       :desc "add expression"      "a" #'dap-ui-expressions-add)
+
+      (:prefix ("db" . "Breakpoint")
+       :desc "dap breakpoint toggle"      "b" #'dap-breakpoint-toggle
+       :desc "dap breakpoint condition"   "c" #'dap-breakpoint-condition
+       :desc "dap breakpoint hit count"   "h" #'dap-breakpoint-hit-condition
+       :desc "dap breakpoint log message" "l" #'dap-breakpoint-log-message))
+
+;; Move text up, down, left and right
+(global-set-key [M-up] 'drag-stuff-up)
+(global-set-key [M-down] 'drag-stuff-down)
+(global-set-key [M-right] 'drag-stuff-right)
+(global-set-key [M-left] 'drag-stuff-left)
+
+(add-hook! 'c++-mode-hook
+  (setq c-basic-offset 2         ;; indentation = 2 spaces
+        tab-width 2
+        indent-tabs-mode nil))   ;; use spaces, not tabs
+
+;; Needed for `:after char-fold' to work
+(use-package char-fold
+  :custom
+  (char-fold-symmetric t)
+  (search-default-mode #'char-fold-to-regexp))
+
+(use-package reverse-im
+  :ensure t ; install `reverse-im' using package.el
+  :demand t ; always load it
+  :after char-fold ; but only after `char-fold' is loaded
+  :bind
+  ("M-T" . reverse-im-translate-word) ; fix a word in wrong layout
+  :custom
+  ;; cache generated keymaps
+  (reverse-im-cache-file (locate-user-emacs-file "reverse-im-cache.el"))
+  ;; use lax matching
+  (reverse-im-char-fold t)
+  (reverse-im-read-char-advice-function #'reverse-im-read-char-include)
+  ;; translate these methods
+  (reverse-im-input-methods '("russian-computer"))
+  :config
+  (reverse-im-mode t)) ; turn the mode on
