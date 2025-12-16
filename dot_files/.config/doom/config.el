@@ -202,3 +202,155 @@
 (setq-default evil-escape-key-sequence "оо")  ; Russian "jj"
 (setq-default evil-escape-unordered-key-sequence t)
 
+;; C++ Header/Implementation Navigation Functions
+(defun my/get-class-name-from-file ()
+  "Extract class name from current file name and convert to PascalCase."
+  (let ((filename (file-name-sans-extension (file-name-nondirectory (buffer-file-name)))))
+    ;; Convert snake_case or kebab-case to PascalCase
+    (mapconcat 'capitalize (split-string filename "[_-]") "")))
+
+(defun my/get-function-signature-at-point ()
+  "Get the function signature at current point, handling both declarations and definitions."
+  (save-excursion
+    (beginning-of-line)
+    (let* ((start-pos (point))
+           (line-content (buffer-substring-no-properties (line-beginning-position) (line-end-position)))
+           function-name
+           signature
+           implementation-body)
+
+      ;; Clean up the line first
+      (setq line-content (string-trim line-content))
+
+      ;; Check if this is a function definition (has body) or just declaration
+      (if (string-match "{" line-content)
+          ;; Function definition - extract implementation
+          (progn
+            ;; First get the signature part (before the brace)
+            (when (string-match "\\(.*?\\){" line-content)
+              (setq signature (string-trim (match-string 1 line-content)))
+              ;; Extract function name from signature
+              (when (string-match "\\(.*?\\)\\b\\([a-zA-Z_][a-zA-Z0-9_]*\\)\\s-*(" signature)
+                (setq function-name (match-string 2 signature))))
+
+            ;; Now get the implementation body
+            (let ((brace-pos (search-forward "{" (line-end-position) t)))
+              (when brace-pos
+                (backward-char 1) ; go back to the opening brace
+                (let ((body-start (point))
+                      (body-end (progn (forward-sexp 1) (point))))
+                  ;; Extract the implementation body
+                  (setq implementation-body
+                        (string-trim (buffer-substring-no-properties (1+ body-start) (1- body-end))))))))
+
+        ;; Function declaration - normal processing
+        (setq line-content (replace-regexp-in-string "\\s-*;\\s-*\\(//.*\\)?$" "" line-content))
+        (setq line-content (replace-regexp-in-string "\\s-*=\\s-*0\\s-*$" "" line-content))
+        (setq line-content (replace-regexp-in-string "^\\s-*\\(?:virtual\\|static\\|inline\\)\\s-+" "" line-content))
+        (setq signature line-content)
+
+        ;; Extract function name
+        (when (string-match "\\(.*?\\)\\b\\([a-zA-Z_][a-zA-Z0-9_]*\\)\\s-*(" line-content)
+          (setq function-name (match-string 2 line-content))))
+
+      (list function-name signature implementation-body))))
+
+(defun my/find-or-create-implementation-file ()
+  "Find or create the corresponding .cpp file for current .h file."
+  (let* ((current-file (buffer-file-name))
+         (base-name (file-name-sans-extension current-file))
+         (cpp-file (concat base-name ".cpp")))
+    (if (file-exists-p cpp-file)
+        (find-file cpp-file)
+      ;; Create new cpp file with basic structure
+      (find-file cpp-file)
+      (insert (format "#include \"%s.h\"\n\n" (file-name-nondirectory base-name)))
+      (save-buffer))
+    cpp-file))
+
+(defun my/create-implementation-stub ()
+  "Create implementation stub for function at point in corresponding .cpp file."
+  (interactive)
+  (if (not (string-match "\\.h\\(pp\\)?$" (buffer-file-name)))
+      (message "This command only works in header files")
+    (let ((func-info (my/get-function-signature-at-point)))
+      (if (not func-info)
+          (message "No function found at current point")
+        (let* ((func-name (car func-info))
+               (signature (cadr func-info))
+               (class-name (my/get-class-name-from-file))
+               (current-buffer (current-buffer)))
+
+          ;; Switch to implementation file
+          (my/find-or-create-implementation-file)
+
+          ;; Check if function already exists
+          (goto-char (point-min))
+          (if (search-forward (format "%s::%s" class-name func-name) nil t)
+              (message "Implementation for %s already exists" func-name)
+
+            ;; Add implementation at end of file
+            (goto-char (point-max))
+            (unless (bolp) (insert "\n"))
+            (insert "\n")
+
+            ;; Create the implementation stub - simpler approach
+            ;; Parse the signature to extract return type and parameters
+            (let* ((parts (split-string signature "("))
+                   (before-params (string-trim (car parts)))
+                   (params (if (cdr parts) (concat "(" (mapconcat 'identity (cdr parts) "(")) "()"))
+                   ;; Split return type and function name
+                   (before-parts (split-string before-params))
+                   (return-type (if (> (length before-parts) 1)
+                                    (mapconcat 'identity (butlast before-parts) " ")
+                                  "void"))
+                   (impl-signature (format "%s %s::%s%s" return-type class-name func-name params)))
+              (insert (format "%s {\n    \n}\n" impl-signature))
+              ;; Position cursor inside the function body
+              (forward-line -2)
+              (end-of-line)
+              (message "Created implementation stub for %s::%s" class-name func-name))))))))
+
+(defun my/goto-function-implementation ()
+  "Go to the implementation of function at point in corresponding .cpp file."
+  (interactive)
+  (if (not (string-match "\\.h\\(pp\\)?$" (buffer-file-name)))
+      (message "This command only works in header files")
+    (let ((func-info (my/get-function-signature-at-point)))
+      (if (not func-info)
+          (message "No function found at current point")
+        (let* ((func-name (car func-info))
+               (class-name (my/get-class-name-from-file))
+               (current-file (buffer-file-name))
+               (base-name (file-name-sans-extension current-file))
+               (cpp-file (concat base-name ".cpp")))
+
+          (if (not (file-exists-p cpp-file))
+              (message "Implementation file %s not found" cpp-file)
+
+            ;; Switch to implementation file and find function
+            (find-file cpp-file)
+            (goto-char (point-min))
+            (if (search-forward (format "%s::%s" class-name func-name) nil t)
+                (progn
+                  (beginning-of-line)
+                  (message "Found implementation of %s::%s" class-name func-name))
+              (message "Implementation of %s::%s not found" class-name func-name))))))))
+
+;; Key bindings
+(map! :leader
+      :desc "Create implementation stub" "c I" #'my/create-implementation-stub
+      :desc "Go to implementation" "c g" #'my/goto-function-implementation)
+
+(defun my/debug-function-at-point ()
+  "Debug function extraction at current point."
+  (interactive)
+  (let ((line-content (buffer-substring-no-properties (line-beginning-position) (line-end-position))))
+    (message "Line content: '%s'" line-content)
+    (message "Has brace: %s" (string-match "{" line-content))
+    (let ((result (my/get-function-signature-at-point)))
+      (message "Function info: %s" result)
+      (message "Function name: %s" (nth 0 result))
+      (message "Signature: %s" (nth 1 result))
+      (message "Implementation body: %s" (nth 2 result)))))
+
