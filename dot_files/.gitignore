@@ -3,3 +3,19 @@
 
 # directory configuration
 .dir-locals.el
+
+# Claude stuff
+CLAUDE.md
+.claude
+
+# binaries
+game
+main
+bin/
+
+# emacs/clang stuff
+.cache
+.clang
+.clang-format
+compile_commands.json
+launch.json
