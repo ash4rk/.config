@@ -1,0 +1,1 @@
+/home/ash4rk/.config/omarchy/current/theme/neovim.lua
