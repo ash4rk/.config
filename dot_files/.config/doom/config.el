@@ -96,6 +96,11 @@
 
 (setq org-support-shift-select 't)
 
+;; EXPERIMENTAL, fix some dap-mode usage
+;; not sure for what and it works or not
+(after! dap-mode
+  (require 'dap-gdb-lldb))
+
 ;; to debug CPP code with DAP-MODE
 (setq dap-auto-configure-mode t)
 (require 'dap-cpptools)
