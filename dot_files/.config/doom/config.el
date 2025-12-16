@@ -165,3 +165,40 @@
   (reverse-im-input-methods '("russian-computer"))
   :config
   (reverse-im-mode t)) ; turn the mode on
+
+;; Manual Russian bindings as fallback
+(map! :after evil
+      :map evil-normal-state-map
+      "." #'evil-ex-search-forward     ; Russian "/"
+      "," #'evil-ex-search-backward    ; Russian "?"
+      ;; Common commands
+      "з" #'evil-paste-after           ; Russian "p"
+      "З" #'evil-paste-before          ; Russian "P"
+      "н" #'evil-yank                  ; Russian "y"
+      "в" #'evil-delete                ; Russian "d"
+      "с" #'evil-change                ; Russian "c"
+      "ш" #'evil-insert                ; Russian "i"
+      "а" #'evil-append                ; Russian "a"
+      "щ" #'evil-open-below            ; Russian "o"
+      "Щ" #'evil-open-above            ; Russian "O"
+      "г" #'evil-undo                  ; Russian "u"
+      "к" #'evil-replace               ; Russian "r"
+
+      ;; Movement (if needed)
+      "р" #'evil-backward-char         ; Russian "h"
+      "о" #'evil-next-line             ; Russian "j"
+      "л" #'evil-previous-line         ; Russian "k"
+      "д" #'evil-forward-char          ; Russian "l"
+
+      ;; Magit
+      "," #'magit-dispatch             ; Russian "?" in Magit buffers
+      :map magit-status-mode-map
+      "," #'magit-dispatch)             ; Russian "?" in Magit status
+
+(map! :leader
+      :desc "Switch header/source"
+      "c h" #'lsp-clangd-find-other-file)
+
+(setq-default evil-escape-key-sequence "оо")  ; Russian "jj"
+(setq-default evil-escape-unordered-key-sequence t)
+
