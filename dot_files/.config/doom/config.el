@@ -354,3 +354,8 @@
       (message "Signature: %s" (nth 1 result))
       (message "Implementation body: %s" (nth 2 result)))))
 
+;; Fix annoying some [Treemacs] function leak in insert mode
+(map! :after treemacs
+      :map treemacs-mode-map
+      :i "D" nil)
+
